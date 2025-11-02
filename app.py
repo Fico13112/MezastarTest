@@ -1,16 +1,15 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
 import numpy as np
 import librosa
-import os
 
 app = Flask(__name__)
 
-# Load your Keras model
+# Load model
 model = tf.keras.models.load_model("pokemon_sound_model_v5.h5")
 
-labels = ['Zeraora', 'Solgaleo', 'Lugia', 'Ho-Oh', 'Lunala', 'Greninja',
-          'Eternatus', 'Keldeo', 'Grimmsnarl', 'Zygarde']
+labels = ['Zeraora', 'Solgaleo', 'Lugia', 'Ho-Oh', 'Lunala', 
+          'Greninja', 'Eternatus', 'Keldeo', 'Grimmsnarl', 'Zygarde']
 
 def extract_mfcc(y, sr, max_len=300):
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
@@ -23,15 +22,7 @@ def extract_mfcc(y, sr, max_len=300):
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
-
-@app.route("/style.css")
-def css():
-    return send_from_directory(".", "style.css")
-
-@app.route("/script.js")
-def js():
-    return send_from_directory(".", "script.js")
+    return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -41,11 +32,10 @@ def predict():
     y, sr = librosa.load(f, sr=16000)
     X = extract_mfcc(y, sr)
     X = (X - np.mean(X)) / (np.std(X)+1e-6)
-    X = np.expand_dims(X, axis=(0,-1))  # shape (1, 40, 300, 1)
+    X = np.expand_dims(X, axis=(0,-1))
     pred = model.predict(X)
     idx = int(np.argmax(pred))
     return jsonify({"prediction": labels[idx], "confidence": float(np.max(pred))})
 
 if __name__ == "__main__":
-    app.run(debug=True)
-
+    app.run(host="0.0.0.0", port=5000)
