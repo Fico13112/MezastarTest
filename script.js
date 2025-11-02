@@ -18,15 +18,20 @@ recordBtn.addEventListener('click', async () => {
         const formData = new FormData();
         formData.append('file', blob, 'sound.wav');
 
-        statusDiv.innerText = "Status: Sending audio for prediction...";
-        const res = await fetch("/predict", { method: "POST", body: formData });
-        const data = await res.json();
-        if (data.prediction) {
-            predictionDiv.innerText = `Prediction: ${data.prediction} (Confidence: ${(data.confidence*100).toFixed(2)}%)`;
-            statusDiv.innerText = "Status: Ready";
-        } else {
-            predictionDiv.innerText = "Prediction failed.";
-            statusDiv.innerText = "Status: Error";
+        statusDiv.innerText = "Status: Sending audio...";
+        try {
+            const res = await fetch("/predict", { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.prediction) {
+                predictionDiv.innerText = `Prediction: ${data.prediction} (Confidence: ${(data.confidence*100).toFixed(2)}%)`;
+                statusDiv.innerText = "Status: Ready";
+            } else {
+                predictionDiv.innerText = "Prediction failed.";
+                statusDiv.innerText = "Status: Error";
+            }
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerText = "Error connecting to server.";
         }
     };
 
